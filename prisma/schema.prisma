@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Ticket {
+  id              String    @id @default(uuid())
+  client_id       String
+  workflow_name   String
+  title           String
+  body            String
+  is_ai_generated Boolean
+  status          String    @default("pending")
+  reprompt_text   String?
+  resume_webhook  String
+  created_at      DateTime  @default(now())
+  actioned_at     DateTime?
+}
+
+model User {
+  id                  String  @id @default(uuid())
+  email               String  @unique
+  password_hash       String
+  email_notifications Boolean @default(true)
+  push_subscriptions  String  @default("[]")
+}
