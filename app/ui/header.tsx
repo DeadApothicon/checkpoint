@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import { useState, useEffect } from "react";
 
 interface HeaderProps {
   userEmail: string;
@@ -10,6 +11,26 @@ interface HeaderProps {
 
 export function Header({ userEmail, unreadCount }: HeaderProps) {
   const initial = userEmail[0]?.toUpperCase() ?? "?";
+  const [count, setCount] = useState(unreadCount);
+
+  useEffect(() => {
+    setCount(unreadCount);
+  }, [unreadCount]);
+
+  useEffect(() => {
+    const id = setInterval(async () => {
+      try {
+        const res = await fetch("/api/tickets/pending-count");
+        if (res.ok) {
+          const data = await res.json();
+          setCount(data.count);
+        }
+      } catch {
+        // ignore network errors — stale count is fine
+      }
+    }, 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <header className="bg-white border-b border-zinc-200 px-6 h-14 flex items-center justify-between shrink-0">
@@ -39,9 +60,9 @@ export function Header({ userEmail, unreadCount }: HeaderProps) {
           title="Notifications"
         >
           <BellIcon />
-          {unreadCount > 0 && (
+          {count > 0 && (
             <span className="absolute -top-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] rounded-full bg-brand-red text-white text-[0.6rem] font-semibold flex items-center justify-center px-0.5 leading-none">
-              {unreadCount > 99 ? "99+" : unreadCount}
+              {count > 99 ? "99+" : count}
             </span>
           )}
         </button>
