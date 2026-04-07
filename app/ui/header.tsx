@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { signOut } from "next-auth/react";
 
 interface HeaderProps {
@@ -17,6 +18,21 @@ export function Header({ userEmail, unreadCount }: HeaderProps) {
       </span>
 
       <div className="flex items-center gap-3">
+        <nav className="flex items-center gap-1 mr-1">
+          <Link
+            href="/"
+            className="px-3 py-1.5 rounded-lg text-sm text-zinc-500 hover:bg-zinc-100 hover:text-brand-near-black transition-colors"
+          >
+            Queue
+          </Link>
+          <Link
+            href="/log"
+            className="px-3 py-1.5 rounded-lg text-sm text-zinc-500 hover:bg-zinc-100 hover:text-brand-near-black transition-colors"
+          >
+            Log
+          </Link>
+        </nav>
+
         <button
           onClick={() => window.location.assign("/")}
           className="relative p-1.5 rounded-lg text-zinc-500 hover:bg-zinc-100 hover:text-brand-near-black transition-colors"
