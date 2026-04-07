@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import type { Ticket } from "./mock-tickets";
+import { approveTicket, denyTicket, repromptTicket } from "@/app/actions";
 
 interface TicketCardProps {
   ticket: Ticket;
@@ -32,18 +33,23 @@ function formatAbsoluteTime(isoString: string): string {
 export function TicketCard({ ticket, onDismiss }: TicketCardProps) {
   const [repromptOpen, setRepromptOpen] = useState(false);
   const [repromptText, setRepromptText] = useState("");
+  const [isPending, startTransition] = useTransition();
 
   function handleApprove() {
     onDismiss(ticket.id);
+    startTransition(() => approveTicket(ticket.id));
   }
 
   function handleDeny() {
     onDismiss(ticket.id);
+    startTransition(() => denyTicket(ticket.id));
   }
 
   function handleRepromptSubmit() {
-    if (!repromptText.trim()) return;
+    const text = repromptText.trim();
+    if (!text) return;
     onDismiss(ticket.id);
+    startTransition(() => repromptTicket(ticket.id, text));
   }
 
   return (
@@ -110,20 +116,23 @@ export function TicketCard({ ticket, onDismiss }: TicketCardProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={handleApprove}
-            className="px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
+            disabled={isPending}
+            className="px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Approve
           </button>
           <button
             onClick={handleDeny}
-            className="px-4 py-1.5 rounded-lg bg-brand-red text-white text-sm font-medium hover:bg-brand-red-dark transition-colors"
+            disabled={isPending}
+            className="px-4 py-1.5 rounded-lg bg-brand-red text-white text-sm font-medium hover:bg-brand-red-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Deny
           </button>
           {ticket.is_ai_generated && (
             <button
               onClick={() => setRepromptOpen(true)}
-              className="px-4 py-1.5 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors"
+              disabled={isPending}
+              className="px-4 py-1.5 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Re-Prompt
             </button>
