@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 
@@ -10,6 +11,7 @@ interface HeaderProps {
 }
 
 export function Header({ userEmail, unreadCount }: HeaderProps) {
+  const pathname = usePathname();
   const initial = userEmail[0]?.toUpperCase() ?? "?";
   const [count, setCount] = useState(unreadCount);
 
@@ -40,18 +42,9 @@ export function Header({ userEmail, unreadCount }: HeaderProps) {
 
       <div className="flex items-center gap-3">
         <nav className="flex items-center gap-1 mr-1">
-          <Link
-            href="/"
-            className="px-3 py-1.5 rounded-lg text-sm text-zinc-500 hover:bg-zinc-100 hover:text-brand-near-black transition-colors"
-          >
-            Queue
-          </Link>
-          <Link
-            href="/log"
-            className="px-3 py-1.5 rounded-lg text-sm text-zinc-500 hover:bg-zinc-100 hover:text-brand-near-black transition-colors"
-          >
-            Log
-          </Link>
+          <NavLink href="/" active={pathname === "/"}>Queue</NavLink>
+          <NavLink href="/log" active={pathname === "/log"}>Log</NavLink>
+          <NavLink href="/settings" active={pathname === "/settings"}>Settings</NavLink>
         </nav>
 
         <button
@@ -80,6 +73,29 @@ export function Header({ userEmail, unreadCount }: HeaderProps) {
         </div>
       </div>
     </header>
+  );
+}
+
+function NavLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+        active
+          ? "bg-brand-offwhite text-brand-near-black font-medium"
+          : "text-zinc-500 hover:bg-zinc-100 hover:text-brand-near-black"
+      }`}
+    >
+      {children}
+    </Link>
   );
 }
 

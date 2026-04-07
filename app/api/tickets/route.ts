@@ -1,5 +1,7 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendNewTicketEmail } from "@/lib/email";
+import { sendPushNotifications } from "@/lib/push";
 
 export async function POST(request: NextRequest) {
   const apiKey = request.headers.get("authorization");
@@ -43,6 +45,28 @@ export async function POST(request: NextRequest) {
       is_ai_generated,
       resume_webhook,
     },
+  });
+
+  // Send email notifications to all users who have opted in
+  const recipients = await prisma.user.findMany({
+    where: { email_notifications: true },
+    select: { email: true },
+  });
+
+  await Promise.allSettled(
+    recipients.map((user) =>
+      sendNewTicketEmail({
+        to: user.email,
+        title: ticket.title,
+        client_id: ticket.client_id,
+        workflow_name: ticket.workflow_name,
+      })
+    )
+  );
+
+  await sendPushNotifications({
+    title: ticket.title,
+    body: ticket.client_id,
   });
 
   return Response.json({ ticket_id: ticket.id, status: ticket.status }, { status: 201 });

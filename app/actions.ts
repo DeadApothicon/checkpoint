@@ -60,6 +60,16 @@ export async function denyTicket(ticketId: string) {
   revalidatePath("/");
 }
 
+export async function setEmailNotifications(enabled: boolean) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) throw new Error("Unauthorized");
+
+  await prisma.user.update({
+    where: { email: session.user.email },
+    data: { email_notifications: enabled },
+  });
+}
+
 export async function repromptTicket(ticketId: string, repromptText: string) {
   await requireAuth();
 
