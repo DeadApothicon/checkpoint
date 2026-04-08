@@ -45,3 +45,8 @@ next-env.d.ts
 # sqlite
 *.db
 *.db-journal
+
+# Odd bits
+AGENTS.md 
+CLAUDE.md
+spec.md
