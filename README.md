@@ -1,36 +1,114 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Checkpoint
+
+A web-based human-in-the-loop interface for reviewing and actioning automation checkpoints. When a workflow reaches a point requiring human judgement, it pauses and creates a ticket in this system. The reviewer then approves it (workflow continues), denies it (workflow halts), or re-prompts it (the AI re-evaluates with additional context).
+
+Built for internal use with [n8n](https://n8n.io/), but the API layer is automation-tool-agnostic — any tool that can make HTTP requests can integrate with it.
+
+## Features
+
+- **Ticket queue** — review pending checkpoints with full context, filter by client
+- **Approve / Deny / Re-Prompt** — actions trigger a webhook back to the automation tool
+- **Action log** — auditable history of every decision taken
+- **Notifications** — in-app badge, browser push, and email alerts on new tickets
+- **Settings** — per-user control over notification preferences
+
+## Tech Stack
+
+| Layer | Choice |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| Database | SQLite via Prisma |
+| Auth | NextAuth.js (Credentials) |
+| Styling | Tailwind CSS v4 |
+| Notifications | Web Push API + Nodemailer |
+| Runtime | Node.js 20 |
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20+
+- npm
+
+### Installation
+
+```bash
+npm install
+```
+
+### Environment Variables
+
+Copy and fill in the required values:
+
+```env
+# App
+NEXTAUTH_SECRET=
+NEXTAUTH_URL=http://localhost:3000
+
+# API auth (shared key for inbound automation requests)
+API_KEY=
+
+# Email (SMTP)
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
+
+# Web Push (generate with: npx web-push generate-vapid-keys)
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:you@example.com
+```
+
+### Database Setup
+
+```bash
+npx prisma migrate deploy
+```
+
+### Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app runs at [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deployment (Docker)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+A `Dockerfile` and `docker-compose.yml` are included for homelab or self-hosted deployment.
 
-## Learn More
+1. Create a `.env.production` file with the environment variables above.
+2. Build and start the container:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+docker compose up -d
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The app is served on `127.0.0.1:3000`. Put a reverse proxy (e.g. Caddy, nginx) in front of it for HTTPS.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The SQLite database is persisted to `./data/` on the host via a Docker volume.
 
-## Deploy on Vercel
+## API
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Inbound requests from automation tools require an `Authorization` header containing the `API_KEY` value.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Create a ticket
+
+```
+POST /api/tickets
+```
+
+```json
+{
+  "client_id": "acme-ltd",
+  "workflow_name": "Customer Quote Generator",
+  "title": "Review quote for Acme Ltd — Job #1042",
+  "body": "Labour: £480\nMaterials: £320\nTotal: £800",
+  "is_ai_generated": true,
+  "resume_webhook": "https://n8n.yourdomain.com/webhook/abc123"
+}
+```
+
+When the reviewer takes action, Checkpoint calls `resume_webhook` with a payload containing `ticket_id` and `action` (`approved`, `denied`, or `re_prompted`). For re-prompts, a `reprompt_text` field is also included.
