@@ -6,4 +6,4 @@ services:
       - "127.0.0.1:3000:3000"
     volumes:
       - ./data:/app/data
-    env_file: .env.production
+    # Environment variables are set in the Portainer UI (or a .env.production file for manual deploys)
